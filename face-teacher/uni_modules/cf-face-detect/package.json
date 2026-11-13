@@ -1,0 +1,62 @@
+{
+  "id": "cf-face-detect",
+  "displayName": "本地人脸检测",
+  "version": "1.0.0",
+  "description": "Android ML Kit 端上人脸检测（有无人脸），不上传、不识别身份",
+  "keywords": ["face", "detect", "mlkit"],
+  "engines": {
+    "HBuilderX": "^3.6.0"
+  },
+  "dcloudext": {
+    "type": "uts",
+    "sale": {
+      "regular": {
+        "price": "0.00"
+      }
+    }
+  },
+  "uni_modules": {
+    "dependencies": [],
+    "encrypt": [],
+    "platforms": {
+      "cloud": {
+        "tcb": "n",
+        "aliyun": "n"
+      },
+      "client": {
+        "App": {
+          "app-vue": "y",
+          "app-nvue": "y",
+          "app-uvue": "y",
+          "app-harmony": "n",
+          "android": "y",
+          "ios": "n"
+        },
+        "H5-mobile": {
+          "Safari": "n",
+          "Android Browser": "n",
+          "微信浏览器(Android)": "n",
+          "QQ浏览器(Android)": "n"
+        },
+        "H5-pc": {
+          "Chrome": "n",
+          "IE": "n",
+          "Edge": "n",
+          "Firefox": "n",
+          "Safari": "n"
+        },
+        "小程序": {
+          "微信": "n",
+          "阿里": "n",
+          "百度": "n",
+          "字节跳动": "n",
+          "QQ": "n"
+        },
+        "快应用": {
+          "华为": "n",
+          "联盟": "n"
+        }
+      }
+    }
+  }
+}

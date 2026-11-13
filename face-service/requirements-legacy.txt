@@ -1,0 +1,24 @@
+# ������ϵͳ��CentOS 7 / glibc 2.17 �ȣ��ļ���������
+# ��ϵͳ������� requirements.txt��
+#
+# ˵����
+# - onnxruntime>=1.17 �ٷ� wheel ��Ҫ����� glibc���ϻ�װ����
+# - ���ļ��Ѷ����ư��������ṩ manylinux2014 �İ汾
+
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+pydantic==2.10.4
+pydantic-settings==2.7.0
+insightface==0.7.3
+onnx==1.16.2
+onnxruntime==1.16.3
+opencv-python-headless==4.8.1.78
+numpy==1.26.4
+Pillow==10.4.0
+httpx==0.28.1
+tqdm==4.67.1
+scikit-image==0.24.0
+matplotlib==3.9.4
+prettytable==3.12.0
+Cython==3.0.11

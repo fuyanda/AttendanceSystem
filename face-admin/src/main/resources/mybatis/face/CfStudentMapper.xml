@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfStudentMapper">
+
+    <resultMap type="CfStudent" id="CfStudentResult">
+        <result property="id"    column="id"    />
+        <result property="name"    column="name"    />
+        <result property="age"    column="age"    />
+        <result property="sex"    column="sex"    />
+        <result property="avatar"    column="avatar"    />
+        <result property="deptId"    column="dept_id"    />
+        <result property="deptName"  column="dept_name"  />
+        <result property="family"    column="family"    />
+        <result property="deadline"    column="deadline"    />
+        <result property="parentTel"    column="parent_tel"    />
+        <result property="phone"    column="phone"    />
+        <result property="bindCode"    column="bind_code"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectCfStudentVo">
+        select cs.id, cs.name, cs.age, cs.sex, cs.avatar, cs.dept_id, sd.dept_name,
+               cs.family, cs.deadline, cs.parent_tel, cs.phone, cs.bind_code, cs.del_flag,
+               cs.create_by, cs.create_time, cs.update_by, cs.update_time, cs.remark
+        from cf_student cs
+        left join sys_dept sd on sd.dept_id = cs.dept_id
+    </sql>
+
+    <select id="selectCfStudentList" parameterType="CfStudent" resultMap="CfStudentResult">
+        <include refid="selectCfStudentVo"/>
+        <where>
+            <choose>
+                <when test="delFlag != null and delFlag != ''">
+                    and cs.del_flag = #{delFlag}
+                </when>
+                <otherwise>
+                    and (cs.del_flag is null or cs.del_flag = '0')
+                </otherwise>
+            </choose>
+            <if test="id != null"> and cs.id = #{id}</if>
+            <if test="name != null  and name != ''"> and cs.name like concat('%', #{name}, '%')</if>
+            <if test="age != null "> and cs.age = #{age}</if>
+            <if test="sex != null  and sex != ''"> and cs.sex = #{sex}</if>
+            <if test="avatar != null  and avatar != ''"> and cs.avatar = #{avatar}</if>
+            <if test="deptId != null  and deptId != ''"> and cs.dept_id = #{deptId}</if>
+            <if test="family != null  and family != ''"> and cs.family = #{family}</if>
+            <if test="deadline != null "> and cs.deadline = #{deadline}</if>
+            <if test="parentTel != null  and parentTel != ''"> and cs.parent_tel = #{parentTel}</if>
+            <if test="phone != null  and phone != ''"> and cs.phone = #{phone}</if>
+            <if test="bindCode != null  and bindCode != ''"> and cs.bind_code = #{bindCode}</if>
+            <if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+                and date_format(cs.create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+                and date_format(cs.create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+        </where>
+        order by sd.dept_name, cs.name, cs.id
+    </select>
+
+    <select id="selectCfStudentById" parameterType="Long" resultMap="CfStudentResult">
+        <include refid="selectCfStudentVo"/>
+        where cs.id = #{id}
+    </select>
+
+    <insert id="insertCfStudent" parameterType="CfStudent" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_student
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="age != null">age,</if>
+            <if test="sex != null">sex,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="family != null">family,</if>
+            <if test="deadline != null">deadline,</if>
+            <if test="parentTel != null">parent_tel,</if>
+            <if test="phone != null">phone,</if>
+            <if test="bindCode != null">bind_code,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="age != null">#{age},</if>
+            <if test="sex != null">#{sex},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="family != null">#{family},</if>
+            <if test="deadline != null">#{deadline},</if>
+            <if test="parentTel != null">#{parentTel},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="bindCode != null">#{bindCode},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCfStudent" parameterType="CfStudent">
+        update cf_student
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="age != null">age = #{age},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="family != null">family = #{family},</if>
+            <if test="deadline != null">deadline = #{deadline},</if>
+            <if test="parentTel != null">parent_tel = #{parentTel},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="bindCode != null">bind_code = #{bindCode},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="deleteCfStudentById" parameterType="Long">
+        update cf_student set del_flag = '2', update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteCfStudentByIds" parameterType="String">
+        update cf_student set del_flag = '2', update_time = sysdate()
+        where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="getInfoByID" resultType="com.ruoyi.project.face.domain.WxMsgCheckVo">
+        SELECT
+            cs.`name` as studentName,
+            cu.open_id as openId,
+            sd.dept_name as school
+        FROM
+            cf_student cs
+                LEFT JOIN cf_user cu ON cs.parent_tel = cu.phone
+                LEFT JOIN sys_dept sd ON cs.dept_id = sd.dept_id
+        WHERE cs.id=#{id}
+    </select>
+
+    <select id="selectListByBindCode" resultMap="CfStudentResult">
+        <include refid="selectCfStudentVo"/>
+        where cs.bind_code = #{bindCode}
+          and (cs.del_flag is null or cs.del_flag = '0')
+    </select>
+
+    <select id="countByBindCode" resultType="int">
+        select count(1) from cf_student where bind_code = #{bindCode}
+    </select>
+
+    <select id="countByBindCodeExcludeId" resultType="int">
+        select count(1) from cf_student where bind_code = #{bindCode} and id != #{id}
+    </select>
+
+    <select id="selectActiveStudentOptions" resultType="ScheduleStudentOption">
+        select s.id as id, s.name as name, d.dept_name as deptName
+        from cf_student s
+        left join sys_dept d on d.dept_id = s.dept_id
+        where (s.del_flag is null or s.del_flag = '0')
+        <if test="name != null and name != ''">
+            and s.name like concat('%', #{name}, '%')
+        </if>
+        order by d.dept_name, s.name, s.id
+    </select>
+</mapper>

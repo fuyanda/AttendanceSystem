@@ -1,0 +1,33 @@
+# 构建产物与编译输出（target/classes 会重复出真实源码副本，污染语义索引）
+**/target/
+**/dist/
+**/build/
+
+# 依赖目录
+**/node_modules/
+.pnpm-store/
+
+# 锁文件（体积大、噪声高，无检索价值）
+**/pnpm-lock.yaml
+**/package-lock.json
+**/yarn.lock
+
+# 上传/运行时产物
+uploads/
+*.log
+logs/
+
+# IDE 与系统文件
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# 环境与密钥（防止敏感信息进入上下文）
+.env
+.env.local
+.env.*.local
+
+*.sh
+*.bat

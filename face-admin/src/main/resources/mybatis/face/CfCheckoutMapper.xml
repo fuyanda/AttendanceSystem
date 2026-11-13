@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfCheckoutMapper">
+
+    <resultMap type="CfCheckout" id="CfCheckoutResult">
+        <result property="id"    column="id"    />
+        <result property="studentId"    column="student_id"    />
+        <result property="avatar"    column="avatar"    />
+        <result property="pushFlag"    column="push_flag"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="studentName"    column="student_name"    />
+        <result property="deptId"       column="dept_id"        />
+        <result property="deptName"     column="dept_name"      />
+    </resultMap>
+
+    <sql id="selectCfCheckoutVo">
+        select id, student_id, avatar, push_flag, del_flag, create_by, create_time, update_by, update_time from cf_checkout
+    </sql>
+
+    <select id="selectCfCheckoutList" parameterType="CfCheckout" resultMap="CfCheckoutResult">
+        SELECT
+            co.id,
+            co.student_id,
+            cs.`name` as student_name,
+            cs.dept_id,
+            sd.dept_name,
+            co.avatar,
+            co.push_flag,
+            co.create_time
+        FROM cf_checkout co
+        LEFT JOIN cf_student cs on cs.id = co.student_id
+        LEFT JOIN sys_dept sd on sd.dept_id = cs.dept_id
+        <where>
+            <if test="pushFlag != null and pushFlag != ''"> and co.push_flag = #{pushFlag}</if>
+            <if test="today != null and today == true"> and DATE(co.create_time) = CURDATE() </if>
+            <if test="deptId != null and deptId != ''"> and cs.dept_id = #{deptId}</if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and date_format(co.create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and date_format(co.create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+            <if test="studentName != null and studentName !=''"> and cs.`name` like concat('%', #{studentName}, '%')</if>
+        </where>
+        order by co.create_time desc
+    </select>
+
+    <select id="countTodayByDept" resultType="com.ruoyi.project.face.domain.DeptCountVo">
+        SELECT
+            cs.dept_id   AS deptId,
+            sd.dept_name AS deptName,
+            COUNT(DISTINCT co.student_id) AS count
+        FROM cf_checkout co
+        LEFT JOIN cf_student cs ON cs.id = co.student_id
+        LEFT JOIN sys_dept sd ON sd.dept_id = cs.dept_id
+        WHERE DATE(co.create_time) = CURDATE()
+          AND (co.del_flag IS NULL OR co.del_flag = '0')
+        GROUP BY cs.dept_id, sd.dept_name
+        ORDER BY sd.dept_name
+    </select>
+
+    <select id="selectCfCheckoutById" parameterType="Long" resultMap="CfCheckoutResult">
+        <include refid="selectCfCheckoutVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="countByStudentAndTimeRange" resultType="int">
+        select count(1)
+        from cf_checkout
+        where student_id = #{studentId}
+          and create_time between #{startTime} and #{endTime}
+          and (del_flag is null or del_flag = '0')
+    </select>
+
+    <insert id="insertCfCheckout" parameterType="CfCheckout" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_checkout
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="pushFlag != null">push_flag,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="pushFlag != null">#{pushFlag},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCfCheckout" parameterType="CfCheckout">
+        update cf_checkout
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="pushFlag != null">push_flag = #{pushFlag},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCfCheckoutById" parameterType="Long">
+        delete from cf_checkout where id = #{id}
+    </delete>
+
+    <delete id="deleteCfCheckoutByIds" parameterType="String">
+        delete from cf_checkout where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="getCheckInfo" resultType="com.ruoyi.project.face.domain.CheckInfoVo">
+        SELECT co.avatar,
+               '签退' AS checkType,
+               cs.name AS studentName,
+               DATE_FORMAT(co.create_time, '%Y-%m-%d %H:%i:%s') AS createTime,
+               IFNULL(sd.dept_name, '') AS school,
+               COALESCE(NULLIF(cs.family, ''), '打卡') AS project
+        FROM cf_checkout co
+                 LEFT JOIN cf_student cs ON cs.id = co.student_id
+                 LEFT JOIN sys_dept sd ON cs.dept_id = sd.dept_id
+        WHERE co.id = #{id}
+          AND (co.del_flag IS NULL OR co.del_flag = '0')
+    </select>
+
+    <select id="countTodayCheckoutByStudentId" resultType="int">
+        SELECT COUNT(1)
+        FROM cf_checkout
+        WHERE student_id = #{studentId}
+          AND DATE(create_time) = CURDATE()
+          AND (del_flag IS NULL OR del_flag = '0')
+    </select>
+</mapper>

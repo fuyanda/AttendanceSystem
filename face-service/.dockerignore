@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.git
+data
+logs
+run
+offline-wheels
+*.tar.gz
+.env

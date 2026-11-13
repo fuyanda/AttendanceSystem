@@ -1,0 +1,5 @@
+import { FaceDetectResult } from '../interface.uts'
+
+export function detectFromPath(_path: string): Promise<FaceDetectResult> {
+  return Promise.reject(new Error('本地人脸检测仅支持 Android')) as Promise<FaceDetectResult>
+}

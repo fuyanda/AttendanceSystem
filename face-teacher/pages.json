@@ -1,0 +1,155 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^PageContainer$": "@/shared/components/layout/PageContainer.vue",
+      "^PageHeader$": "@/shared/components/layout/PageHeader.vue",
+      "^NavPageHeader$": "@/shared/components/layout/NavPageHeader.vue",
+      "^PageSection$": "@/shared/components/layout/PageSection.vue",
+      "^AppButton$": "@/shared/components/ui/AppButton.vue",
+      "^FormField$": "@/shared/components/ui/FormField.vue",
+      "^SearchBar$": "@/shared/components/ui/SearchBar.vue",
+      "^ProForm$": "@/shared/components/ui/ProForm.vue",
+      "^CameraPanel$": "@/shared/components/ui/CameraPanel.vue",
+      "^AppTabBar$": "@/shared/components/layout/AppTabBar.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/home/home",
+      "style": {
+        "navigationBarTitleText": "打卡管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/students/students",
+      "style": {
+        "navigationBarTitleText": "学生名单管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/students/form",
+      "style": {
+        "navigationBarTitleText": "学生信息",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/students/face-capture",
+      "style": {
+        "navigationBarTitleText": "人脸采集",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/camera/capture",
+      "style": {
+        "navigationBarTitleText": "拍照",
+        "navigationStyle": "custom",
+        "disableScroll": true,
+        "app-plus": {
+          "titleNView": false,
+          "bounce": "none"
+        }
+      }
+    },
+    {
+      "path": "pages/punch/punch",
+      "style": {
+        "navigationBarTitleText": "人脸识别",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/punch-live/punch-live",
+      "style": {
+        "navigationBarTitleText": "常驻签到",
+        "navigationStyle": "custom",
+        "disableScroll": true,
+        "app-plus": {
+          "titleNView": false,
+          "bounce": "none"
+        }
+      }
+    },
+    {
+      "path": "pages/manual-checkout/manual-checkout",
+      "style": {
+        "navigationBarTitleText": "手动签退",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/manual-checkin/manual-checkin",
+      "style": {
+        "navigationBarTitleText": "手动签到",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/review/prepare",
+      "style": {
+        "navigationBarTitleText": "课堂点评",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/review/edit",
+      "style": {
+        "navigationBarTitleText": "课堂点评",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/settings/settings",
+      "style": {
+        "navigationBarTitleText": "设置",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/settings/profile",
+      "style": {
+        "navigationBarTitleText": "个人信息",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/settings/password",
+      "style": {
+        "navigationBarTitleText": "修改密码",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/settings/punch",
+      "style": {
+        "navigationBarTitleText": "打卡时间段",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/settings/punch-form",
+      "style": {
+        "navigationBarTitleText": "时段设置",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "打卡管理",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F5F7FB"
+  },
+  "uniIdRouter": {}
+}

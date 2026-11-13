@@ -1,0 +1,322 @@
+<template>
+  <view class="page">
+    <live-pusher
+      id="facePusher"
+      ref="facePusher"
+      class="pusher"
+      url=""
+      mode="FHD"
+      :muted="true"
+      :enable-camera="true"
+      :enable-mic="false"
+      :auto-focus="true"
+      :device-position="devicePosition"
+      beauty="0"
+      whiteness="0"
+      aspect="9:16"
+      @statechange="onStateChange"
+      @error="onError"
+    />
+    <view class="overlay">
+      <view class="top-bar">
+        <text class="camera-tag">{{ cameraLabel }}</text>
+        <text class="btn-flip" @click="toggleCamera">{{ switching ? '切换中' : '切换摄像头' }}</text>
+      </view>
+      <view class="frame">
+        <view class="oval" />
+        <text class="guide-text">{{ guideText }}</text>
+      </view>
+      <view class="tips">
+        <text class="tip">正脸居中</text>
+        <text class="tip">光线充足</text>
+        <text class="tip">无口罩遮挡</text>
+      </view>
+    </view>
+    <view class="toolbar">
+      <text class="btn btn-cancel" @click="onCancel">取消</text>
+      <text class="btn btn-shoot" @click="onShoot">{{ shooting ? '拍照中' : '拍照' }}</text>
+    </view>
+  </view>
+</template>
+
+<script>
+import { requestCameraPermission } from '@/shared/utils/camera-permission.js'
+import {
+  getPreferredCameraPosition,
+  setPreferredCameraPosition
+} from '@/shared/utils/camera-preference.js'
+
+export default {
+  data() {
+    return {
+      shooting: false,
+      switching: false,
+      previewStarted: false,
+      devicePosition: 'front'
+    }
+  },
+  computed: {
+    cameraLabel() {
+      return this.devicePosition === 'back' ? '后置摄像头' : '前置摄像头'
+    },
+    guideText() {
+      return this.devicePosition === 'back' ? '请将面部置于框内（后置）' : '请将面部置于框内'
+    }
+  },
+  onLoad(query) {
+    this.eventChannel = this.getOpenerEventChannel ? this.getOpenerEventChannel() : null
+    const fromQuery = query && (query.device === 'back' || query.device === 'front')
+      ? query.device
+      : ''
+    const preferred = getPreferredCameraPosition()
+    this.devicePosition = fromQuery || preferred || 'front'
+  },
+  async onReady() {
+    const granted = await requestCameraPermission()
+    if (!granted) {
+      uni.showToast({ title: '未获得相机权限', icon: 'none' })
+      setTimeout(() => uni.navigateBack(), 600)
+      return
+    }
+    this.context = uni.createLivePusherContext('facePusher', this)
+    setTimeout(() => this.startPreview(), 200)
+  },
+  methods: {
+    startPreview() {
+      if (!this.context) return
+      this.context.startPreview({
+        success: () => {
+          this.previewStarted = true
+        },
+        fail: () => {
+          uni.showToast({ title: '相机预览失败', icon: 'none' })
+        }
+      })
+    },
+    onStateChange(e) {
+      const code = e.detail && e.detail.code
+      if (code === 1007) {
+        this.previewStarted = true
+      }
+    },
+    onError(e) {
+      const msg = (e.detail && e.detail.errMsg) || '相机不可用'
+      uni.showToast({ title: msg, icon: 'none' })
+    },
+    onCancel() {
+      if (this.eventChannel) {
+        this.eventChannel.emit('onPhotoCaptured', null)
+      }
+      uni.navigateBack()
+    },
+    askKeepCameraSetting() {
+      uni.showModal({
+        title: '提示',
+        content: '是否保留当前设置？',
+        confirmText: '保留',
+        cancelText: '不保留',
+        success: (res) => {
+          if (res.confirm) {
+            setPreferredCameraPosition(this.devicePosition)
+            uni.showToast({ title: '已保存，下次打开将使用此摄像头', icon: 'none' })
+          }
+        }
+      })
+    },
+    toggleCamera() {
+      if (this.switching || this.shooting || !this.context) return
+      this.switching = true
+      this.context.switchCamera({
+        success: () => {
+          this.devicePosition = this.devicePosition === 'front' ? 'back' : 'front'
+          this.switching = false
+          this.askKeepCameraSetting()
+        },
+        fail: () => {
+          this.restartWithCamera(this.devicePosition === 'front' ? 'back' : 'front')
+        }
+      })
+    },
+    restartWithCamera(position) {
+      if (!this.context) {
+        this.switching = false
+        return
+      }
+      this.context.stopPreview({
+        complete: () => {
+          this.devicePosition = position
+          this.previewStarted = false
+          setTimeout(() => {
+            this.context.startPreview({
+              success: () => {
+                this.previewStarted = true
+                this.switching = false
+                this.askKeepCameraSetting()
+              },
+              fail: () => {
+                uni.showToast({ title: '切换摄像头失败', icon: 'none' })
+                this.switching = false
+              }
+            })
+          }, 200)
+        }
+      })
+    },
+    onShoot() {
+      if (this.shooting || !this.context) {
+        if (!this.context) {
+          uni.showToast({ title: '相机未就绪', icon: 'none' })
+        }
+        return
+      }
+      this.shooting = true
+      const snapStart = Date.now()
+      console.log('[PERF][camera] snapshot start, mode=FHD, device=' + this.devicePosition)
+      this.context.snapshot({
+        success: (res) => {
+          const message = res.message || res
+          const path = message.tempImagePath || message.snapshotPath || message.path || res.tempImagePath
+          const cost = Date.now() - snapStart
+          console.log('[PERF][camera] snapshot done: ' + cost + 'ms, path=' + (path || ''))
+          // 不在此处 getFileInfo：navigateBack 后页面销毁，异步回调易触发 uni-app-view `$` 报错；大小由识别页统计
+          if (path && this.eventChannel) {
+            this.eventChannel.emit('onPhotoCaptured', path)
+          }
+          uni.navigateBack()
+        },
+        fail: (err) => {
+          console.log('[PERF][camera] snapshot fail: ' + (Date.now() - snapStart) + 'ms', err)
+          uni.showToast({ title: (err && err.errMsg) || '拍照失败', icon: 'none' })
+        },
+        complete: () => {
+          this.shooting = false
+        }
+      })
+    }
+  },
+  onUnload() {
+    if (this.context) {
+      this.context.stopPreview()
+    }
+  }
+}
+</script>
+
+<style>
+.page {
+  flex: 1;
+  background-color: #000000;
+}
+.pusher {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 180rpx;
+}
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 180rpx;
+  align-items: center;
+  justify-content: center;
+}
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 88rpx;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+}
+.camera-tag {
+  color: #e2e8f0;
+  font-size: 24rpx;
+  padding-top: 10rpx;
+  padding-bottom: 10rpx;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+  border-radius: 999rpx;
+  background-color: rgba(15, 23, 42, 0.65);
+}
+.btn-flip {
+  color: #ffffff;
+  font-size: 26rpx;
+  padding-top: 12rpx;
+  padding-bottom: 12rpx;
+  padding-left: 24rpx;
+  padding-right: 24rpx;
+  border-radius: 999rpx;
+  background-color: rgba(34, 197, 94, 0.9);
+}
+.frame {
+  align-items: center;
+}
+.oval {
+  width: 560rpx;
+  height: 680rpx;
+  border-width: 4rpx;
+  border-style: dashed;
+  border-color: rgba(34, 197, 94, 0.95);
+  border-radius: 340rpx;
+  background-color: rgba(34, 197, 94, 0.06);
+}
+.guide-text {
+  margin-top: 28rpx;
+  color: #ffffff;
+  font-size: 30rpx;
+  text-align: center;
+}
+.tips {
+  flex-direction: row;
+  margin-top: 24rpx;
+}
+.tip {
+  margin-left: 10rpx;
+  margin-right: 10rpx;
+  padding-top: 8rpx;
+  padding-bottom: 8rpx;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+  border-radius: 999rpx;
+  background-color: rgba(15, 23, 42, 0.65);
+  color: #e2e8f0;
+  font-size: 22rpx;
+}
+.toolbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 180rpx;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 48rpx;
+  padding-right: 48rpx;
+  background-color: rgba(15, 23, 42, 0.9);
+}
+.btn {
+  height: 80rpx;
+  line-height: 80rpx;
+  padding-left: 48rpx;
+  padding-right: 48rpx;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  text-align: center;
+}
+.btn-cancel {
+  color: #e2e8f0;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.btn-shoot {
+  color: #ffffff;
+  background-color: #22c55e;
+}
+</style>

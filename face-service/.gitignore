@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 运行时数据
+data/
+!.gitkeep
+
+# 模型体积大，不入库；内网离线拷贝
+models/
+!.gitkeep
+!models/.gitkeep
+
+# 环境
+.env
+
+# 进程与日志
+run/
+logs/
+
+# IDE
+.idea/
+.vscode/

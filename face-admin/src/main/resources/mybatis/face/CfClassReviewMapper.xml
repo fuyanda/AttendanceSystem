@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfClassReviewMapper">
+
+    <resultMap id="SessionResult" type="CfClassReviewSession">
+        <id property="id" column="id"/>
+        <result property="teacherUserId" column="teacher_user_id"/>
+        <result property="subject" column="subject"/>
+        <result property="classTime" column="class_time"/>
+        <result property="classContent" column="class_content"/>
+        <result property="classImages" column="class_images"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="studentCount" column="student_count"/>
+    </resultMap>
+
+    <resultMap id="ItemResult" type="CfClassReviewItem">
+        <id property="id" column="id"/>
+        <result property="sessionId" column="session_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="feeId" column="fee_id"/>
+        <result property="consumeId" column="consume_id"/>
+        <result property="disciplineScore" column="discipline_score"/>
+        <result property="participationScore" column="participation_score"/>
+        <result property="content" column="content"/>
+        <result property="images" column="images"/>
+        <result property="pushFlag" column="push_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="studentName" column="student_name"/>
+        <result property="studentAvatar" column="student_avatar"/>
+        <result property="consumeHours" column="consume_hours"/>
+        <result property="remainingHours" column="remaining_hours"/>
+    </resultMap>
+
+    <sql id="selectSessionVo">
+        select s.id, s.teacher_user_id, s.subject, s.class_time, s.class_content, s.class_images,
+               s.status, s.del_flag, s.remark, s.create_by, s.create_time, s.update_by, s.update_time,
+               u.nick_name as teacher_name,
+               (select count(1) from cf_class_review_item i where i.session_id = s.id) as student_count
+        from cf_class_review_session s
+        left join sys_user u on u.user_id = s.teacher_user_id
+    </sql>
+
+    <select id="selectSessionById" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        where s.id = #{id} and s.del_flag = '0'
+    </select>
+
+    <select id="selectTodayByStudentId" resultType="ClassReviewTodayVo">
+        select s.id as sessionId,
+               i.id as itemId,
+               s.status as status
+        from cf_class_review_item i
+        inner join cf_class_review_session s on s.id = i.session_id and s.del_flag = '0'
+        where i.student_id = #{studentId}
+          and date_format(s.class_time, '%Y%m%d') = date_format(now(), '%Y%m%d')
+          <if test="teacherUserId != null">
+              and s.teacher_user_id = #{teacherUserId}
+          </if>
+        order by s.class_time desc, i.id desc
+        limit 1
+    </select>
+
+    <select id="selectSessionList" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        <where>
+            s.del_flag = '0'
+            <if test="teacherUserId != null">and s.teacher_user_id = #{teacherUserId}</if>
+            <if test="subject != null and subject != ''">and s.subject = #{subject}</if>
+            <if test="status != null and status != ''">and s.status = #{status}</if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and date_format(s.class_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and date_format(s.class_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+        </where>
+        order by s.class_time desc, s.id desc
+    </select>
+
+    <insert id="insertSession" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_class_review_session
+        (teacher_user_id, subject, class_time, class_content, class_images, status, del_flag, remark, create_by, create_time)
+        values
+        (#{teacherUserId}, #{subject}, #{classTime}, #{classContent}, #{classImages}, #{status}, #{delFlag}, #{remark}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateSession">
+        update cf_class_review_session
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="classTime != null">class_time = #{classTime},</if>
+            <if test="classContent != null">class_content = #{classContent},</if>
+            <if test="classImages != null">class_images = #{classImages},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id} and del_flag = '0'
+    </update>
+
+    <select id="selectItemsBySessionId" resultMap="ItemResult">
+        select i.id, i.session_id, i.student_id, i.fee_id, i.consume_id,
+               i.discipline_score, i.participation_score, i.content, i.images, i.push_flag,
+               i.create_by, i.create_time, i.update_by, i.update_time,
+               st.name as student_name, st.avatar as student_avatar,
+               c.hours as consume_hours,
+               greatest(0, f.total_hours - f.used_hours) as remaining_hours
+        from cf_class_review_item i
+        left join cf_student st on st.id = i.student_id
+        left join cf_student_fee f on f.id = i.fee_id
+        left join cf_student_fee_consume c on c.id = i.consume_id
+        where i.session_id = #{sessionId}
+        order by st.name, i.id
+    </select>
+
+    <select id="selectItemById" resultMap="ItemResult">
+        select i.id, i.session_id, i.student_id, i.fee_id, i.consume_id,
+               i.discipline_score, i.participation_score, i.content, i.images, i.push_flag,
+               i.create_by, i.create_time, i.update_by, i.update_time,
+               st.name as student_name, st.avatar as student_avatar,
+               c.hours as consume_hours,
+               greatest(0, f.total_hours - f.used_hours) as remaining_hours
+        from cf_class_review_item i
+        left join cf_student st on st.id = i.student_id
+        left join cf_student_fee f on f.id = i.fee_id
+        left join cf_student_fee_consume c on c.id = i.consume_id
+        where i.id = #{id}
+    </select>
+
+    <insert id="insertItem" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_class_review_item
+        (session_id, student_id, fee_id, consume_id, discipline_score, participation_score, content, images, push_flag, create_by, create_time)
+        values
+        (#{sessionId}, #{studentId}, #{feeId}, #{consumeId}, #{disciplineScore}, #{participationScore}, #{content}, #{images}, #{pushFlag}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateItem">
+        update cf_class_review_item
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="disciplineScore != null">discipline_score = #{disciplineScore},</if>
+            <if test="participationScore != null">participation_score = #{participationScore},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="updateItemPushFlag">
+        update cf_class_review_item set push_flag = #{pushFlag} where id = #{id}
+    </update>
+
+    <select id="selectReviewInfoByItemId" resultType="ClassReviewInfoVo">
+        select st.name as studentName,
+               s.subject as subjectLabel,
+               u.nick_name as teacherName,
+               s.class_time as classTime,
+               s.class_content as classContent,
+               s.class_images as classImagesRaw,
+               i.discipline_score as disciplineScore,
+               i.participation_score as participationScore,
+               i.content as content,
+               i.images as imagesRaw,
+               d.dept_name as school
+        from cf_class_review_item i
+        inner join cf_class_review_session s on s.id = i.session_id
+        inner join cf_student st on st.id = i.student_id
+        left join sys_user u on u.user_id = s.teacher_user_id
+        left join sys_dept d on d.dept_id = u.dept_id
+        where i.id = #{itemId} and s.del_flag = '0'
+    </select>
+</mapper>

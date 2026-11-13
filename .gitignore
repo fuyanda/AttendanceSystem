@@ -1,0 +1,57 @@
+# Nested git backups / accidental nested repos
+**/.git.bak-gitee/
+
+# Dependencies & build
+**/node_modules/
+**/.pnpm-store/
+**/target/
+**/dist/
+**/dist-ssr/
+**/unpackage/
+**/.venv/
+**/build/
+
+# Runtime / uploads / models
+**/uploadPath/
+face-service/data/
+face-service/models/
+face-service/run/
+**/logs/
+*.log
+
+# Local secrets & machine env
+**/.env
+**/.env.*.local
+**/application-local.yml
+**/*.local.yml
+**/host.local.js
+**/*.local.js
+!.env.example
+!**/.env.example
+!**/*.local.js.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.swp
+
+# Cursor local
+**/.cursor/
+
+# Workspace (machine-specific paths)
+*.code-workspace
+
+# Locks (prefer pnpm-lock where present; ignore npm/yarn)
+**/package-lock.json
+**/yarn.lock
+
+# Misc
+.DS_Store
+*.tsbuildinfo
+.eslintcache
+.prettiercache
+.vite/
+coverage/

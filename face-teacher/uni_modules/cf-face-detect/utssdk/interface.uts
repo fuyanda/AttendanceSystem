@@ -1,0 +1,11 @@
+export type FaceDetectResult = {
+  hasFace: boolean
+  faceCount: number
+  largestAreaRatio: number
+  elapsedMs: number
+}
+
+/**
+ * 从本地图片路径检测是否有人脸（仅 Android）
+ */
+export declare function detectFromPath(path: string): Promise<FaceDetectResult>

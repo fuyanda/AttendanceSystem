@@ -1,0 +1,125 @@
+import BitmapFactory from 'android.graphics.BitmapFactory'
+import InputImage from 'com.google.mlkit.vision.common.InputImage'
+import FaceDetection from 'com.google.mlkit.vision.face.FaceDetection'
+import FaceDetectorOptions from 'com.google.mlkit.vision.face.FaceDetectorOptions'
+import FaceDetector from 'com.google.mlkit.vision.face.FaceDetector'
+import Face from 'com.google.mlkit.vision.face.Face'
+import Tasks from 'com.google.android.gms.tasks.Tasks'
+import List from 'java.util.List'
+import File from 'java.io.File'
+import Uri from 'android.net.Uri'
+import { FaceDetectResult } from '../interface.uts'
+
+let sharedDetector: FaceDetector | null = null
+
+function normalizePath(path: string): string {
+  let p = path
+  if (p.indexOf('file://') == 0) {
+    p = p.substring(7)
+  }
+  if (p.indexOf('//') == 0) {
+    p = p.substring(1)
+  }
+  return p
+}
+
+function errorText(e: any | null): string {
+  if (e == null) {
+    return 'unknown'
+  }
+  try {
+    return '' + e
+  } catch (ex) {
+    return '人脸检测失败'
+  }
+}
+
+function getDetector(): FaceDetector {
+  if (sharedDetector == null) {
+    const options = new FaceDetectorOptions.Builder()
+      .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+      .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
+      .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+      .build()
+    sharedDetector = FaceDetection.getClient(options)
+  }
+  return sharedDetector as FaceDetector
+}
+
+export function detectFromPath(path: string): Promise<FaceDetectResult> {
+  return new Promise<FaceDetectResult>((resolve, reject) => {
+    const started = Date.now()
+    const filePath = normalizePath(path)
+    if (filePath.length == 0) {
+      reject(new Error('图片路径为空'))
+      return
+    }
+
+    UTSAndroid.getDispatcher('io').async(function (_) {
+      try {
+        const file = new File(filePath)
+        if (!file.exists()) {
+          UTSAndroid.getDispatcher('main').async(function (_) {
+            reject(new Error('图片不存在: ' + filePath))
+          }, null)
+          return
+        }
+
+        const bounds = new BitmapFactory.Options()
+        bounds.inJustDecodeBounds = true
+        BitmapFactory.decodeFile(filePath, bounds)
+        const imageWidth = bounds.outWidth
+        const imageHeight = bounds.outHeight
+        if (imageWidth <= 0 || imageHeight <= 0) {
+          UTSAndroid.getDispatcher('main').async(function (_) {
+            reject(new Error('图片尺寸无效: ' + filePath))
+          }, null)
+          return
+        }
+
+        const context = UTSAndroid.getAppContext()
+        if (context == null) {
+          UTSAndroid.getDispatcher('main').async(function (_) {
+            reject(new Error('AppContext为空'))
+          }, null)
+          return
+        }
+
+        const uri = Uri.fromFile(file)
+        const image = InputImage.fromFilePath(context, uri)
+        const faces = Tasks.await(getDetector().process(image)) as List<Face>
+        const count = faces.size
+        const imageArea = imageWidth * imageHeight
+        let maxRatio = 0.0
+        let i: Int = 0
+        while (i < count) {
+          const face = faces.get(i)
+          const box = face.getBoundingBox()
+          const bw = box.right - box.left
+          const bh = box.bottom - box.top
+          const area = bw * bh
+          const ratio = imageArea > 0 ? (1.0 * area / imageArea) : 0.0
+          if (ratio > maxRatio) {
+            maxRatio = ratio
+          }
+          i = i + 1
+        }
+
+        const result: FaceDetectResult = {
+          hasFace: count > 0,
+          faceCount: count,
+          largestAreaRatio: maxRatio,
+          elapsedMs: Date.now() - started
+        }
+        UTSAndroid.getDispatcher('main').async(function (_) {
+          resolve(result)
+        }, null)
+      } catch (e) {
+        const msg = errorText(e) + ' | path=' + filePath
+        UTSAndroid.getDispatcher('main').async(function (_) {
+          reject(new Error(msg))
+        }, null)
+      }
+    }, null)
+  })
+}

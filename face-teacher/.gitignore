@@ -1,0 +1,11 @@
+node_modules/
+unpackage/
+.hbuilderx/
+.DS_Store
+
+# Local host overrides
+shared/config/host.local.js
+.env
+.env.*.local
+.idea/
+.vscode/

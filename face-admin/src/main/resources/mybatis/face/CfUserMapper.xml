@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfUserMapper">
+
+    <resultMap type="CfUser" id="CfUserResult">
+        <result property="id"    column="id"    />
+        <result property="code"    column="code"    />
+        <result property="name"    column="name"    />
+        <result property="phone"    column="phone"    />
+        <result property="password"    column="password"    />
+        <result property="openId"    column="open_id"    />
+        <result property="isInviteEnabled"    column="is_invite_enabled"    />
+        <result property="remark"    column="remark"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectCfUserVo">
+        select id, code, name, phone,password, open_id, is_invite_enabled, remark, del_flag, create_by, create_time, update_by, update_time from cf_user
+    </sql>
+
+    <select id="selectCfUserList" parameterType="CfUser" resultMap="CfUserResult">
+        <include refid="selectCfUserVo"/>
+        <where>
+            <if test="code != null  and code != ''"> and code = #{code}</if>
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
+            <if test="openId != null  and openId != ''"> and open_id = #{openId}</if>
+            <if test="isInviteEnabled != null "> and is_invite_enabled = #{isInviteEnabled}</if>
+        </where>
+    </select>
+
+    <select id="selectCfUserById" parameterType="Long" resultMap="CfUserResult">
+        <include refid="selectCfUserVo"/>
+        where id = #{id}
+    </select>
+    <select id="selectCfUserByPhone" resultType="com.ruoyi.project.face.domain.CfUser">
+        <include refid="selectCfUserVo"/>
+        where phone = #{phone} and del_flag = 0 limit 1
+    </select>
+    <select id="selectCfUserByOpenId" resultType="com.ruoyi.project.face.domain.CfUser">
+        <include refid="selectCfUserVo"/>
+        where open_id = #{openId} and del_flag = 0 limit 1
+    </select>
+    <select id="selectCfUserByStudentID" resultType="com.ruoyi.project.face.domain.CfUser">
+        select cu.*
+        from cf_user cu
+                 left join cf_student cs on cu.phone = cs.parent_tel
+        where cs.id = #{id}
+    </select>
+
+    <insert id="insertCfUser" parameterType="CfUser" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="code != null and code != ''">code,</if>
+            <if test="name != null">name,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="password != null and password != ''">password,</if>
+            <if test="openId != null">open_id,</if>
+            <if test="isInviteEnabled != null">is_invite_enabled,</if>
+            <if test="remark != null">remark,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="code != null and code != ''">#{code},</if>
+            <if test="name != null">#{name},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="password != null and password != ''">#{password},</if>
+            <if test="openId != null">#{openId},</if>
+            <if test="isInviteEnabled != null">#{isInviteEnabled},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCfUser" parameterType="CfUser">
+        update cf_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="code != null and code != ''">code = #{code},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="openId != null">open_id = #{openId},</if>
+            <if test="isInviteEnabled != null">is_invite_enabled = #{isInviteEnabled},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCfUserById" parameterType="Long">
+        delete from cf_user where id = #{id}
+    </delete>
+
+    <delete id="deleteCfUserByIds" parameterType="String">
+        delete from cf_user where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

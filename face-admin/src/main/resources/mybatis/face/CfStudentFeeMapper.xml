@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfStudentFeeMapper">
+
+    <resultMap id="CfStudentFeeResult" type="CfStudentFee">
+        <id property="id" column="id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="subject" column="subject"/>
+        <result property="totalHours" column="total_hours"/>
+        <result property="usedHours" column="used_hours"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="teacherUserId" column="teacher_user_id"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="studentName" column="student_name"/>
+        <result property="teacherName" column="teacher_name"/>
+    </resultMap>
+
+    <sql id="selectFeeVo">
+        select f.id, f.student_id, f.subject, f.total_hours, f.used_hours, f.total_amount,
+               f.teacher_user_id, f.status, f.del_flag, f.remark,
+               f.create_by, f.create_time, f.update_by, f.update_time,
+               s.name as student_name,
+               u.nick_name as teacher_name
+        from cf_student_fee f
+        left join cf_student s on s.id = f.student_id
+        left join sys_user u on u.user_id = f.teacher_user_id
+    </sql>
+
+    <select id="selectCfStudentFeeById" resultMap="CfStudentFeeResult">
+        <include refid="selectFeeVo"/>
+        where f.id = #{id} and f.del_flag = '0'
+    </select>
+
+    <select id="selectCfStudentFeeList" resultMap="CfStudentFeeResult">
+        <include refid="selectFeeVo"/>
+        <where>
+            f.del_flag = '0'
+            <if test="studentId != null">and f.student_id = #{studentId}</if>
+            <if test="subject != null and subject != ''">and f.subject = #{subject}</if>
+            <if test="status != null and status != ''">and f.status = #{status}</if>
+            <if test="studentName != null and studentName != ''">and s.name like concat('%', #{studentName}, '%')</if>
+            <if test="teacherUserId != null">and f.teacher_user_id = #{teacherUserId}</if>
+        </where>
+        order by f.create_time desc
+    </select>
+
+    <select id="selectActiveByStudentId" resultMap="CfStudentFeeResult">
+        <include refid="selectFeeVo"/>
+        where f.del_flag = '0' and f.status = '0' and f.student_id = #{studentId}
+        order by f.create_time desc
+    </select>
+
+    <insert id="insertCfStudentFee" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_student_fee
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="subject != null">subject,</if>
+            <if test="totalHours != null">total_hours,</if>
+            <if test="usedHours != null">used_hours,</if>
+            <if test="totalAmount != null">total_amount,</if>
+            <if test="teacherUserId != null">teacher_user_id,</if>
+            <if test="status != null">status,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="subject != null">#{subject},</if>
+            <if test="totalHours != null">#{totalHours},</if>
+            <if test="usedHours != null">#{usedHours},</if>
+            <if test="totalAmount != null">#{totalAmount},</if>
+            <if test="teacherUserId != null">#{teacherUserId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCfStudentFee">
+        update cf_student_fee
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="subject != null">subject = #{subject},</if>
+            <if test="totalHours != null">total_hours = #{totalHours},</if>
+            <if test="usedHours != null">used_hours = #{usedHours},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="teacherUserId != null">teacher_user_id = #{teacherUserId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="deleteCfStudentFeeByIds">
+        update cf_student_fee set del_flag = '2' where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <update id="incrementUsedHours">
+        update cf_student_fee
+        set used_hours = used_hours + #{hours}
+        where id = #{id} and used_hours + #{hours} &lt;= total_hours
+    </update>
+
+    <resultMap id="ScheduleResult" type="CfStudentFeeSchedule">
+        <id property="id" column="id"/>
+        <result property="feeId" column="fee_id"/>
+        <result property="weekDay" column="week_day"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+    </resultMap>
+
+    <select id="selectSchedulesByFeeId" resultMap="ScheduleResult">
+        select id, fee_id, week_day, start_time, end_time from cf_student_fee_schedule where fee_id = #{feeId} order by week_day, start_time
+    </select>
+
+    <delete id="deleteSchedulesByFeeId">
+        delete from cf_student_fee_schedule where fee_id = #{feeId}
+    </delete>
+
+    <insert id="batchInsertSchedules">
+        insert into cf_student_fee_schedule (fee_id, week_day, start_time, end_time) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.feeId}, #{item.weekDay}, #{item.startTime}, #{item.endTime})
+        </foreach>
+    </insert>
+
+    <insert id="insertConsume" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_student_fee_consume (fee_id, hours, source, checkin_id, consume_time, remark, create_by, create_time)
+        values (#{feeId}, #{hours}, #{source}, #{checkinId}, #{consumeTime}, #{remark}, #{createBy}, #{createTime})
+    </insert>
+
+    <insert id="insertRefund" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_student_fee_refund (fee_id, hours, amount, refund_time, remark, create_by, create_time)
+        values (#{feeId}, #{hours}, #{amount}, #{refundTime}, #{remark}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="applyRefund">
+        update cf_student_fee
+        set total_hours = total_hours - #{hours},
+            total_amount = total_amount - #{amount},
+            status = case when #{closeIfEmpty} and (total_hours - #{hours}) &lt;= used_hours then '1' else status end,
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where id = #{id}
+          and del_flag = '0'
+          and status = '0'
+          and total_hours - #{hours} &gt;= used_hours
+          and total_amount &gt;= #{amount}
+    </update>
+
+    <select id="selectTeachers" resultType="FeeTeacherVo">
+        select distinct u.user_id as userId, u.user_name as userName, u.nick_name as nickName, u.dept_id as deptId
+        from sys_user u
+        inner join sys_user_role ur on ur.user_id = u.user_id
+        inner join sys_role r on r.role_id = ur.role_id and r.del_flag = '0' and r.status = '0'
+        where u.del_flag = '0' and u.status = '0'
+          and r.role_key = 'teacher'
+        <if test="deptId != null">and u.dept_id = #{deptId}</if>
+        order by u.nick_name
+    </select>
+
+    <select id="selectTeacherByUserId" resultType="FeeTeacherVo">
+        select u.user_id as userId, u.user_name as userName, u.nick_name as nickName, u.dept_id as deptId
+        from sys_user u
+        where u.user_id = #{userId} and u.del_flag = '0' and u.status = '0'
+    </select>
+
+    <select id="selectEnrolledStudentsByTeacher" resultType="ScheduleStudentOption">
+        select distinct s.id as id, s.name as name
+        from cf_student_fee f
+        inner join cf_student s on s.id = f.student_id and (s.del_flag is null or s.del_flag = '0')
+        where f.del_flag = '0' and f.status = '0'
+          and f.teacher_user_id = #{teacherUserId}
+        <if test="name != null and name != ''">
+          and s.name like concat('%', #{name}, '%')
+        </if>
+        order by s.name
+    </select>
+
+    <select id="countUserPostByCode" resultType="int">
+        select count(1)
+        from sys_user_post up
+        inner join sys_post p on p.post_id = up.post_id and p.status = '0'
+        where up.user_id = #{userId} and p.post_code = #{postCode}
+    </select>
+
+    <select id="selectSubjectsByTeacher" resultType="java.lang.String">
+        select distinct f.subject
+        from cf_student_fee f
+        where f.del_flag = '0' and f.status = '0' and f.teacher_user_id = #{teacherUserId}
+        order by f.subject
+    </select>
+
+    <select id="selectConsumableByTeacherAndSubject" resultMap="CfStudentFeeResult">
+        <include refid="selectFeeVo"/>
+        where f.del_flag = '0' and f.status = '0'
+          and f.teacher_user_id = #{teacherUserId}
+          and f.subject = #{subject}
+          and f.used_hours &lt; f.total_hours
+        order by s.name, f.create_time
+    </select>
+
+    <sql id="feeRefundAggJoin">
+        left join (
+            select fee_id, sum(hours) as refund_hours, sum(amount) as refund_amount
+            from cf_student_fee_refund
+            group by fee_id
+        ) rh on rh.fee_id = f.id
+    </sql>
+
+    <sql id="feeUnitPriceExpr">
+        (f.total_amount + ifnull(rh.refund_amount, 0))
+        / nullif(f.total_hours + ifnull(rh.refund_hours, 0), 0)
+    </sql>
+
+    <sql id="ledgerUnionSql">
+        select 'pay' as biz_type,
+               f.create_time as biz_time,
+               f.id as fee_id,
+               s.name as student_name,
+               f.subject as subject,
+               u.nick_name as teacher_name,
+               (f.total_hours + ifnull(rh.refund_hours, 0)) as hours,
+               round(
+                   f.total_amount + ifnull(rh.refund_amount, 0)
+                   + f.used_hours * <include refid="feeUnitPriceExpr"/>
+               , 2) as amount,
+               f.remark as remark,
+               f.create_by as operator
+        from cf_student_fee f
+        left join cf_student s on s.id = f.student_id
+        left join sys_user u on u.user_id = f.teacher_user_id
+        <include refid="feeRefundAggJoin"/>
+        where f.del_flag = '0'
+
+        union all
+
+        select 'consume' as biz_type,
+               ifnull(c.consume_time, c.create_time) as biz_time,
+               f.id as fee_id,
+               s.name as student_name,
+               f.subject as subject,
+               u.nick_name as teacher_name,
+               c.hours as hours,
+               round(c.hours * <include refid="feeUnitPriceExpr"/>, 2) as amount,
+               c.remark as remark,
+               c.create_by as operator
+        from cf_student_fee_consume c
+        inner join cf_student_fee f on f.id = c.fee_id and f.del_flag = '0'
+        left join cf_student s on s.id = f.student_id
+        left join sys_user u on u.user_id = f.teacher_user_id
+        <include refid="feeRefundAggJoin"/>
+
+        union all
+
+        select 'refund' as biz_type,
+               ifnull(r.refund_time, r.create_time) as biz_time,
+               f.id as fee_id,
+               s.name as student_name,
+               f.subject as subject,
+               u.nick_name as teacher_name,
+               r.hours as hours,
+               r.amount as amount,
+               r.remark as remark,
+               r.create_by as operator
+        from cf_student_fee_refund r
+        inner join cf_student_fee f on f.id = r.fee_id and f.del_flag = '0'
+        left join cf_student s on s.id = f.student_id
+        left join sys_user u on u.user_id = f.teacher_user_id
+    </sql>
+
+    <sql id="ledgerWhere">
+        <where>
+            <if test="studentName != null and studentName != ''">
+                and student_name like concat('%', #{studentName}, '%')
+            </if>
+            <if test="subject != null and subject != ''">
+                and subject = #{subject}
+            </if>
+            <if test="bizType != null and bizType != ''">
+                and biz_type = #{bizType}
+            </if>
+            <if test="teacherUserId != null">
+                and exists (
+                    select 1 from cf_student_fee ff
+                    where ff.id = fee_id and ff.teacher_user_id = #{teacherUserId}
+                )
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and date_format(biz_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and date_format(biz_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectLedgerList" resultType="FeeLedgerItemVo">
+        select biz_type as bizType,
+               biz_time as bizTime,
+               fee_id as feeId,
+               student_name as studentName,
+               subject as subject,
+               teacher_name as teacherName,
+               hours as hours,
+               amount as amount,
+               remark as remark,
+               operator as operator
+        from (
+            <include refid="ledgerUnionSql"/>
+        ) ledger
+        <include refid="ledgerWhere"/>
+        order by biz_time desc
+    </select>
+
+    <select id="selectLedgerSummary" resultType="FeeLedgerSummaryVo">
+        select
+            sum(case when biz_type = 'pay' then 1 else 0 end) as payCount,
+            sum(case when biz_type = 'pay' then ifnull(hours, 0) else 0 end) as payHours,
+            sum(case when biz_type = 'pay' then ifnull(amount, 0) else 0 end) as payAmount,
+            sum(case when biz_type = 'consume' then 1 else 0 end) as consumeCount,
+            sum(case when biz_type = 'consume' then ifnull(hours, 0) else 0 end) as consumeHours,
+            sum(case when biz_type = 'consume' then ifnull(amount, 0) else 0 end) as consumeAmount,
+            sum(case when biz_type = 'refund' then 1 else 0 end) as refundCount,
+            sum(case when biz_type = 'refund' then ifnull(hours, 0) else 0 end) as refundHours,
+            sum(case when biz_type = 'refund' then ifnull(amount, 0) else 0 end) as refundAmount
+        from (
+            <include refid="ledgerUnionSql"/>
+        ) ledger
+        <include refid="ledgerWhere"/>
+    </select>
+</mapper>

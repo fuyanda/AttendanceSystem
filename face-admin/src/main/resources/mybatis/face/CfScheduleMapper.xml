@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfScheduleMapper">
+
+    <resultMap id="SessionResult" type="CfScheduleSession">
+        <id property="id" column="id"/>
+        <result property="teacherUserId" column="teacher_user_id"/>
+        <result property="subject" column="subject"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="source" column="source"/>
+        <result property="feeId" column="fee_id"/>
+        <result property="feeScheduleId" column="fee_schedule_id"/>
+        <result property="editedFlag" column="edited_flag"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="studentCount" column="student_count"/>
+    </resultMap>
+
+    <resultMap id="StudentResult" type="CfScheduleStudent">
+        <id property="id" column="id"/>
+        <result property="sessionId" column="session_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="studentName" column="student_name"/>
+        <result property="studentAvatar" column="student_avatar"/>
+    </resultMap>
+
+    <sql id="selectSessionVo">
+        select s.id, s.teacher_user_id, s.subject, s.start_time, s.end_time, s.source,
+               s.fee_id, s.fee_schedule_id, s.edited_flag, s.del_flag, s.remark,
+               s.create_by, s.create_time, s.update_by, s.update_time,
+               u.nick_name as teacher_name,
+               (select count(1) from cf_schedule_student st where st.session_id = s.id) as student_count
+        from cf_schedule_session s
+        left join sys_user u on u.user_id = s.teacher_user_id
+    </sql>
+
+    <select id="selectSessionById" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        where s.id = #{id} and s.del_flag = '0'
+    </select>
+
+    <select id="selectTeacherCalendar" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        where s.del_flag = '0'
+          <if test="teacherUserId != null">
+          and s.teacher_user_id = #{teacherUserId}
+          </if>
+          and s.start_time &lt; #{endTime}
+          and s.end_time &gt; #{beginTime}
+        order by s.start_time, s.id
+    </select>
+
+    <select id="selectStudentCalendar" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        where s.del_flag = '0'
+          and exists (
+              select 1 from cf_schedule_student st
+              where st.session_id = s.id and st.student_id = #{studentId}
+          )
+          and s.start_time &lt; #{endTime}
+          and s.end_time &gt; #{beginTime}
+        order by s.start_time, s.id
+    </select>
+
+    <select id="selectStudentsBySessionId" resultMap="StudentResult">
+        select st.id, st.session_id, st.student_id, st.create_by, st.create_time,
+               cs.name as student_name, cs.avatar as student_avatar
+        from cf_schedule_student st
+        left join cf_student cs on cs.id = st.student_id
+        where st.session_id = #{sessionId}
+        order by cs.name, st.id
+    </select>
+
+    <select id="countTeacherConflict" resultType="int">
+        select count(1) from cf_schedule_session s
+        where s.del_flag = '0'
+          and s.teacher_user_id = #{teacherUserId}
+          and s.start_time &lt; #{endTime}
+          and s.end_time &gt; #{startTime}
+          <if test="excludeId != null">and s.id &lt;&gt; #{excludeId}</if>
+    </select>
+
+    <select id="countStudentConflict" resultType="int">
+        select count(1) from cf_schedule_session s
+        inner join cf_schedule_student st on st.session_id = s.id
+        where s.del_flag = '0'
+          and st.student_id = #{studentId}
+          and s.start_time &lt; #{endTime}
+          and s.end_time &gt; #{startTime}
+          <if test="excludeId != null">and s.id &lt;&gt; #{excludeId}</if>
+    </select>
+
+    <select id="selectByFeeScheduleAndStart" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        where s.del_flag = '0'
+          and s.fee_schedule_id = #{feeScheduleId}
+          and s.start_time = #{startTime}
+        limit 1
+    </select>
+
+    <select id="selectByFeeIdAndStart" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        where s.del_flag = '0'
+          and s.fee_id = #{feeId}
+          and s.start_time = #{startTime}
+        limit 1
+    </select>
+
+    <select id="selectUneditedByFeeId" resultMap="SessionResult">
+        <include refid="selectSessionVo"/>
+        where s.del_flag = '0' and s.fee_id = #{feeId} and s.edited_flag = '0' and s.source = 'fee'
+    </select>
+
+    <insert id="insertSession" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_schedule_session
+        (teacher_user_id, subject, start_time, end_time, source, fee_id, fee_schedule_id,
+         edited_flag, del_flag, remark, create_by, create_time)
+        values
+        (#{teacherUserId}, #{subject}, #{startTime}, #{endTime}, #{source}, #{feeId}, #{feeScheduleId},
+         #{editedFlag}, #{delFlag}, #{remark}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateSession">
+        update cf_schedule_session
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="teacherUserId != null">teacher_user_id = #{teacherUserId},</if>
+            <if test="subject != null">subject = #{subject},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="source != null">source = #{source},</if>
+            <if test="feeId != null">fee_id = #{feeId},</if>
+            <if test="feeScheduleId != null">fee_schedule_id = #{feeScheduleId},</if>
+            <if test="editedFlag != null">edited_flag = #{editedFlag},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id} and del_flag = '0'
+    </update>
+
+    <update id="softDeleteSession">
+        update cf_schedule_session
+        set del_flag = '2', update_by = #{updateBy}, update_time = #{updateTime}
+        where id = #{id} and del_flag = '0'
+    </update>
+
+    <update id="softDeleteUneditedByFeeId">
+        update cf_schedule_session
+        set del_flag = '2', update_by = #{updateBy}, update_time = #{updateTime}
+        where fee_id = #{feeId} and source = 'fee' and edited_flag = '0' and del_flag = '0'
+    </update>
+
+    <delete id="deleteStudentsBySessionId">
+        delete from cf_schedule_student where session_id = #{sessionId}
+    </delete>
+
+    <insert id="batchInsertStudents">
+        insert into cf_schedule_student (session_id, student_id, create_by, create_time) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sessionId}, #{item.studentId}, #{item.createBy}, #{item.createTime})
+        </foreach>
+    </insert>
+</mapper>

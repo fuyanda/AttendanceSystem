@@ -1,0 +1,15 @@
+services:
+  face-service:
+    build: .
+    image: face-service:latest
+    container_name: face-service
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./.env:/app/.env:ro
+    mem_limit: 1g

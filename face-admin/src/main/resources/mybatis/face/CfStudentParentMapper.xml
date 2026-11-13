@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfStudentParentMapper">
+
+    <resultMap type="CfStudentParent" id="CfStudentParentResult">
+        <result property="id" column="id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="relationType" column="relation_type"/>
+        <result property="isPrimary" column="is_primary"/>
+        <result property="notifyEnabled" column="notify_enabled"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="phone" column="phone"/>
+        <result property="userName" column="user_name"/>
+        <result property="openId" column="open_id"/>
+        <result property="studentName" column="student_name"/>
+    </resultMap>
+
+    <sql id="selectRelationVo">
+        select csp.id,
+               csp.student_id,
+               csp.user_id,
+               csp.relation_type,
+               csp.is_primary,
+               csp.notify_enabled,
+               csp.create_by,
+               csp.create_time,
+               csp.update_by,
+               csp.update_time,
+               cu.phone,
+               cu.name as user_name,
+               cu.open_id
+        from cf_student_parent csp
+                 inner join cf_user cu on csp.user_id = cu.id and cu.del_flag = '0'
+    </sql>
+
+    <select id="selectByStudentId" resultMap="CfStudentParentResult">
+        <include refid="selectRelationVo"/>
+        where csp.student_id = #{studentId}
+        order by csp.is_primary desc, csp.id asc
+    </select>
+
+    <select id="selectByUserId" resultMap="CfStudentParentResult">
+        select csp.id,
+               csp.student_id,
+               csp.user_id,
+               csp.relation_type,
+               csp.is_primary,
+               csp.notify_enabled,
+               cs.name as student_name,
+               cu.phone,
+               cu.name as user_name
+        from cf_student_parent csp
+                 inner join cf_student cs on csp.student_id = cs.id
+                 inner join cf_user cu on csp.user_id = cu.id and cu.del_flag = '0'
+        where csp.user_id = #{userId}
+        order by csp.is_primary desc, csp.id asc
+    </select>
+
+    <select id="selectByStudentIdAndUserId" resultMap="CfStudentParentResult">
+        <include refid="selectRelationVo"/>
+        where csp.student_id = #{studentId}
+          and csp.user_id = #{userId}
+        limit 1
+    </select>
+
+    <select id="selectNotifyTargetsByStudentId" resultType="com.ruoyi.project.face.domain.WxMsgCheckVo">
+        SELECT cs.name  AS studentName,
+               cu.open_id AS openId,
+               sd.dept_name AS school
+        FROM cf_student cs
+                 INNER JOIN cf_student_parent csp
+                            ON cs.id = csp.student_id AND csp.notify_enabled = 1
+                 INNER JOIN cf_user cu
+                            ON csp.user_id = cu.id AND cu.del_flag = '0'
+                                AND cu.open_id IS NOT NULL AND cu.open_id != ''
+                 LEFT JOIN sys_dept sd ON cs.dept_id = sd.dept_id
+        WHERE cs.id = #{studentId}
+    </select>
+
+    <insert id="insertCfStudentParent" parameterType="CfStudentParent" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_student_parent
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="relationType != null">relation_type,</if>
+            <if test="isPrimary != null">is_primary,</if>
+            <if test="notifyEnabled != null">notify_enabled,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="relationType != null">#{relationType},</if>
+            <if test="isPrimary != null">#{isPrimary},</if>
+            <if test="notifyEnabled != null">#{notifyEnabled},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCfStudentParent" parameterType="CfStudentParent">
+        update cf_student_parent
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="relationType != null">relation_type = #{relationType},</if>
+            <if test="isPrimary != null">is_primary = #{isPrimary},</if>
+            <if test="notifyEnabled != null">notify_enabled = #{notifyEnabled},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByStudentId">
+        delete from cf_student_parent where student_id = #{studentId}
+    </delete>
+
+    <delete id="deleteByStudentIdAndUserId">
+        delete
+        from cf_student_parent
+        where student_id = #{studentId}
+          and user_id = #{userId}
+    </delete>
+</mapper>

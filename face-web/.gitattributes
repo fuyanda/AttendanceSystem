@@ -1,0 +1,4 @@
+
+# UTF-8 source files
+*.vue text eol=lf
+*.js text eol=lf

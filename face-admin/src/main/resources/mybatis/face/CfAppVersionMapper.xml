@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.face.mapper.CfAppVersionMapper">
+
+    <resultMap type="com.ruoyi.project.face.domain.CfAppVersion" id="CfAppVersionResult">
+        <result property="id" column="id"/>
+        <result property="platform" column="platform"/>
+        <result property="versionName" column="version_name"/>
+        <result property="versionCode" column="version_code"/>
+        <result property="apkUrl" column="apk_url"/>
+        <result property="forceUpdate" column="force_update"/>
+        <result property="changelog" column="changelog"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectCfAppVersionVo">
+        select id, platform, version_name, version_code, apk_url, force_update, changelog,
+               status, remark, create_by, create_time, update_by, update_time
+        from cf_app_version
+    </sql>
+
+    <select id="selectCfAppVersionList" parameterType="com.ruoyi.project.face.domain.CfAppVersion" resultMap="CfAppVersionResult">
+        <include refid="selectCfAppVersionVo"/>
+        <where>
+            <if test="platform != null and platform != ''">and platform = #{platform}</if>
+            <if test="versionName != null and versionName != ''">and version_name like concat('%', #{versionName}, '%')</if>
+            <if test="versionCode != null">and version_code = #{versionCode}</if>
+            <if test="forceUpdate != null and forceUpdate != ''">and force_update = #{forceUpdate}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+        </where>
+        order by version_code desc, id desc
+    </select>
+
+    <select id="selectCfAppVersionById" parameterType="Long" resultMap="CfAppVersionResult">
+        <include refid="selectCfAppVersionVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectLatestEnabledByPlatform" resultMap="CfAppVersionResult">
+        <include refid="selectCfAppVersionVo"/>
+        where platform = #{platform}
+          and status = '1'
+        order by version_code desc, id desc
+        limit 1
+    </select>
+
+    <insert id="insertCfAppVersion" parameterType="com.ruoyi.project.face.domain.CfAppVersion" useGeneratedKeys="true" keyProperty="id">
+        insert into cf_app_version
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="platform != null and platform != ''">platform,</if>
+            <if test="versionName != null and versionName != ''">version_name,</if>
+            <if test="versionCode != null">version_code,</if>
+            <if test="apkUrl != null and apkUrl != ''">apk_url,</if>
+            <if test="forceUpdate != null and forceUpdate != ''">force_update,</if>
+            <if test="changelog != null">changelog,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="platform != null and platform != ''">#{platform},</if>
+            <if test="versionName != null and versionName != ''">#{versionName},</if>
+            <if test="versionCode != null">#{versionCode},</if>
+            <if test="apkUrl != null and apkUrl != ''">#{apkUrl},</if>
+            <if test="forceUpdate != null and forceUpdate != ''">#{forceUpdate},</if>
+            <if test="changelog != null">#{changelog},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCfAppVersion" parameterType="com.ruoyi.project.face.domain.CfAppVersion">
+        update cf_app_version
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="platform != null and platform != ''">platform = #{platform},</if>
+            <if test="versionName != null and versionName != ''">version_name = #{versionName},</if>
+            <if test="versionCode != null">version_code = #{versionCode},</if>
+            <if test="apkUrl != null and apkUrl != ''">apk_url = #{apkUrl},</if>
+            <if test="forceUpdate != null and forceUpdate != ''">force_update = #{forceUpdate},</if>
+            <if test="changelog != null">changelog = #{changelog},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCfAppVersionById" parameterType="Long">
+        delete from cf_app_version where id = #{id}
+    </delete>
+
+    <delete id="deleteCfAppVersionByIds" parameterType="Long">
+        delete from cf_app_version where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
